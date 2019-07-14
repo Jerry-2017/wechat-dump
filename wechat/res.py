@@ -23,12 +23,15 @@ from common.textutil import md5, get_file_b64
 from common.timer import timing
 from .msg import TYPE_SPEAK
 from .audio import parse_wechat_audio_file
+from .video import parse_wechat_video_file
+from .video import parse_wechat_video_thumb
 
 LIB_PATH = os.path.dirname(os.path.abspath(__file__))
 INTERNAL_EMOJI_DIR = os.path.join(LIB_PATH, 'static', 'internal_emoji')
 VOICE_DIRNAME = 'voice2'
 IMG_DIRNAME = 'image2'
 EMOJI_DIRNAME = 'emoji'
+VIDEO_DIRNAME = 'video'
 
 JPEG_QUALITY = 50
 
@@ -83,6 +86,7 @@ class Resource(object):
         self.img_dir = os.path.join(res_dir, IMG_DIRNAME)
         self.voice_dir = os.path.join(res_dir, VOICE_DIRNAME)
         self.emoji_dir = os.path.join(res_dir, EMOJI_DIRNAME)
+        self.video_dir = os.path.join(res_dir, VIDEO_DIRNAME)
         self.avt_reader = AvatarReader(res_dir, avt_db)
 
     def get_voice_filename(self, imgpath):
@@ -103,6 +107,20 @@ class Resource(object):
                 self.get_voice_filename(imgpath))
         return self.voice_cache[idx].get()
 
+    def get_video_mp4(self,imgpath):
+        file_name=os.path.join(self.video_dir,
+                               '{}.mp4'.format(imgpath))
+        if os.path.exists(file_name):
+            content=parse_wechat_video_file(file_name)
+        else:
+            content=(None,None)
+        return content
+
+    def get_video_thumb(self,imgpath):
+        file_name=os.path.join(self.video_dir,
+                               '{}'.format(imgpath))
+        return parse_wechat_video_thumb(file_name)
+        
     def cache_voice_mp3(self, msgs):
         """ for speed.
         msgs: a collection of WeChatMsg, to cache for later fetch"""
@@ -143,8 +161,9 @@ class Resource(object):
             dir1, dir2 = fname[:2], fname[2:4]
             dirname = os.path.join(self.img_dir, dir1, dir2)
             if not os.path.isdir(dirname):
-                logger.warn("Directory not found: {}".format(dirname))
-                continue
+                dirname=self.img_dir
+                #logger.warn("Directory not found: {}".format(dirname))
+                #continue
             for f in os.listdir(dirname):
                 if fname in f:
                     full_name = os.path.join(dirname, f)

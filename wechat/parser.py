@@ -127,6 +127,7 @@ SELECT {} FROM message
     def _parse_msg_row(self, row):
         """ parse a record of message into my format"""
         values = dict(zip(WeChatDBParser.FIELDS, row))
+        
         if values['content']:
             values['content'] = ensure_unicode(values['content'])
         else:

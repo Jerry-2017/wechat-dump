@@ -41,6 +41,7 @@ if __name__ == '__main__':
         os.unlink(output)
 
     key = get_key(args.imei, args.uin)
+    #key= "fc168ef"#"000a891"#"c13b150"#
     print "KEY: {}".format(key)
 
     print "Decrypt and dump database to {} ... ".format(output)

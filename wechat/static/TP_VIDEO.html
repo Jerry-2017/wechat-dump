@@ -1,0 +1,23 @@
+<div class="chatItem {sender_label}">
+  <div class="chatItemContent">
+    <span class="avatar"></span>
+    <div class="cloud cloudVideo" onclick="playVideo(event)" >
+      <div class="cloudPannel" title="{time}" {nickname}>
+        <div class="sendStatus">
+          <span class="second">{video_duration}"</span>
+        </div>
+        <div class="cloudBody">
+          <div class="cloudContent">
+            <span class="img_wrap">
+              <a class="fancybox" rel="group" href="">          
+                <video height="160" controls>
+                    <source src="data:video/mp4;base64,{video_str}" />
+                </video>
+              </a>
+            </span>                
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

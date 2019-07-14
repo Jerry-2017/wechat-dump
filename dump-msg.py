@@ -30,9 +30,9 @@ for chatid, msgs in parser.msgs_by_chat.iteritems():
     print u"Writing msgs for {}".format(name)
     safe_name = safe_filename(name)
     outf = os.path.join(output_dir, safe_name + '.txt')
-    if os.path.isfile(outf):
-        print(u"File {} exists! Skip contact {}".format(outf, name))
-        continue
+    #if os.path.isfile(outf):
+    #    print(u"File {} exists! Skip contact {}".format(outf, name))
+    #    continue
     with open(outf, 'w') as f:
         for m in msgs:
             print >> f, m

@@ -34,7 +34,11 @@ TEMPLATES_FILES = {TYPE_MSG: "TP_MSG",
                    TYPE_SPEAK: "TP_SPEAK",
                    TYPE_EMOJI: "TP_EMOJI",
                    TYPE_CUSTOM_EMOJI: "TP_EMOJI",
-                   TYPE_LINK: "TP_MSG"}
+                   TYPE_LINK: "TP_MSG",
+                   TYPE_WX_VIDEO: "TP_VIDEO",
+                   TYPE_VIDEO_FILE:"TP_VIDEO",
+                   TYPE_VIDEO_THUMB : "TP_IMG",
+                   }
 TEMPLATES = {k: ensure_unicode(open(os.path.join(STATIC_PATH, '{}.html'.format(v))).read())
     for k, v in TEMPLATES_FILES.iteritems()}
 
@@ -88,6 +92,7 @@ class HTMLRender(object):
         self.final_js = u"\n".join(map(process, self.js_string))
         return self.final_js
 
+        
     #@timing(total=True)
     def render_msg(self, msg):
         """ render a message, return the html block"""
@@ -150,9 +155,21 @@ class HTMLRender(object):
                 content = u'URL:<a target="_blank" href="{0}">{0}</a>'.format(url)
                 format_dict['content'] = content
                 return template.format(**format_dict)
-        elif msg.type == TYPE_WX_VIDEO:
+        elif msg.type == TYPE_WX_VIDEO or msg.type==TYPE_VIDEO_FILE:
             # TODO: fetch video from resource
-            return fallback()
+            video_str,duration= self.res.get_video_mp4(msg.imgPath)
+            video_thumb=self.res.get_video_thumb(msg.imgPath)
+            if video_str is not None:
+                format_dict['video_duration'] = duration
+                format_dict['video_str'] = video_str            
+                return template.format(**format_dict)
+            elif video_thumb is not None:
+                template = TEMPLATES.get(TYPE_VIDEO_THUMB) 
+                format_dict["img"]=(video_thumb,"")
+                return template.format(**format_dict)
+                
+            else:                
+                return fallback()
         return fallback()
 
     def _render_partial_msgs(self, msgs):

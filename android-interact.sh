@@ -9,6 +9,8 @@ cd "$PROG_DIR"
 
 source compatibility.sh
 
+
+
 # Please check that your path is the same, since this might be different among devices
 RES_DIR="/mnt/sdcard/tencent/MicroMsg"
 MM_DIR="/data/data/com.tencent.mm"
@@ -16,8 +18,16 @@ MM_DIR="/data/data/com.tencent.mm"
 echo "Starting rooted adb server..."
 adb root
 
+getfile()
+{
+src_file=$1
+dest_file=$2
+adb shell "su -c cat $src_file" > $dest_file
+}
+
 if [[ $1 == "uin" ]]; then
-	adb pull $MM_DIR/shared_prefs/system_config_prefs.xml 2>/dev/null
+	#adb pull $MM_DIR/shared_prefs/system_config_prefs.xml 2>/dev/null
+    getfile $MM_DIR/shared_prefs/system_config_prefs.xml system_config_prefs.xml
 	uin=$($GREP 'default_uin' system_config_prefs.xml | $GREP -o 'value=\"\-?[0-9]*' | cut -c 8-)
 	[[ -n $uin ]] || {
 		>&2 echo "Failed to get wechat uin. You can try other methods, or report a bug."
@@ -54,8 +64,8 @@ elif [[ $1 == "db" || $1 == "res" ]]; then
 		mkdir -p resource; cd resource
 		echo "Pulling resources... "
 		for d in avatar image2 voice2 emoji video sfs; do
-			adb shell "cd $RES_DIR/$chooseUser &&
-								 busybox tar czf - $d 2>/dev/null | busybox base64" |
+			adb shell "su -c 'cd $RES_DIR/$chooseUser &&
+								 busybox tar czf - $d 2>/dev/null | busybox base64'" |
 					base64 -di | tar xzf -
 
 			# Old Slow Way:
@@ -72,14 +82,18 @@ elif [[ $1 == "db" || $1 == "res" ]]; then
 		echo "Total size: $(du -sh resource | cut -f1)"
 	else
 		echo "Pulling database and avatar index file..."
-		adb pull $MM_DIR/MicroMsg/$chooseUser/EnMicroMsg.db
+		#adb pull $MM_DIR/MicroMsg/$chooseUser/EnMicroMsg.db
+        getfile $MM_DIR/MicroMsg/$chooseUser/EnMicroMsg.db EnMicroMsg.db
 		[[ -f EnMicroMsg.db ]] && \
 			echo "Database successfully downloaded to EnMicroMsg.db" || {
 			>&2 echo "Failed to pull database by adb"
 			exit 1
 		}
-		adb pull $MM_DIR/MicroMsg/$chooseUser/sfs/avatar.index
-		[[ -f avatar.index ]] && \
+		#adb pull $MM_DIR/MicroMsg/$chooseUser/sfs/avatar.index
+			adb shell "su -c 'cd $MM_DIR/MicroMsg/$chooseUser/ &&
+								 busybox tar czf - avatar 2>/dev/null | busybox base64'" |
+					base64 -di | tar xzf -
+		[[ -f avatar ]] && \
 			echo "Avatar index successfully downloaded to avatar.index" || {
 				>&2 echo "Failed to pull avatar index by adb, are you using latest version of wechat?"
 				exit 1

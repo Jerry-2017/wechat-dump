@@ -15,19 +15,32 @@ TYPE_VOIP = 50
 TYPE_WX_VIDEO = 62  # video took by wechat
 TYPE_SYSTEM = 10000
 TYPE_CUSTOM_EMOJI = 1048625
-TYPE_REDENVELOPE = 436207665
+TYPE_REDENVELOPE = [436207665,469762097]
 TYPE_LOCATION_SHARING = -1879048186
 TYPE_APP_MSG = 16777265
+TYPE_INVITE = 570425393
+TYPE_APP=285212721
 
-_KNOWN_TYPES = [eval(k) for k in dir() if k.startswith('TYPE_')]
+TYPE_VIDEO_THUMB= -1
+
+_KNOWN_TYPES=[]
+for k in dir():
+    if k.startswith('TYPE_'):
+        k=eval(k)
+        if isinstance(k,list):
+            _KNOWN_TYPES.extend(k)
+        else:
+            _KNOWN_TYPES.append(k)
+
 
 import re
 from pyquery import PyQuery
 import logging
 logger = logging.getLogger(__name__)
 
-from common.textutil import ensure_unicode
 
+from common.textutil import ensure_unicode
+from semi_xml import read_semi
 
 class WeChatMsg(object):
 
@@ -43,6 +56,7 @@ class WeChatMsg(object):
         if self.type not in _KNOWN_TYPES:
             logger.warn("Unhandled message type: {}".format(self.type))
             # only to supress repeated warning:
+            print(self.type,self.content)
             _KNOWN_TYPES.append(self.type)
 
     def msg_str(self):
@@ -89,11 +103,32 @@ class WeChatMsg(object):
         elif self.type == TYPE_EMOJI:
             # TODO add emoji name
             return self.content
-        elif self.type == TYPE_REDENVELOPE:
-            pq = PyQuery(self.content_xml_ready, parser='xml')
+        elif self.type in TYPE_REDENVELOPE:
+            try:
+                pq = PyQuery(self.content_xml_ready, parser='xml')
+            except:
+                content=self.content_xml_ready[self.content_xml_ready.find(u'<')-1:]
+                pq = PyQuery(content, parser='xml')
 
             title = pq('sendertitle').text()
             return u"[RED ENVELOPE]\n{}".format(title)
+        elif self.type == TYPE_MSG:
+            return self.content
+        elif self.type == TYPE_INVITE:
+
+            pq = PyQuery(self.content_xml_ready, parser='xml')
+           
+            member_nick_name=pq("nickname").eq(0)
+            lst=[]
+            for i in range(1,10):
+                new_nick_name=pq("nickname").eq(i).text()
+                if new_nick_name!="":
+                    lst.append(new_nick_name)
+
+            return u"INVITE: {} invited {} to the gourp chat".format(member_nick_name.text(),",".join(lst))
+        elif self.type == TYPE_APP:
+            content_list=read_semi(self.content)
+            return u'\n'.join(content_list)
         else:
             # TODO replace smiley with text
             return self.content
@@ -136,4 +171,3 @@ class WeChatMsg(object):
         if not emoji:
             return None
         return emoji.attrs['productid']
-
